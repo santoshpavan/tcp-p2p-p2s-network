@@ -32,12 +32,14 @@ def addRequestHandler(hostname, port_number, rfc_title, rfc_number):
     response += f"RFC {rfc_number} {rfc_title} {hostname} {port_number}"
     return response
 
-def lookupRequestHandler(hostname, port_number, rfc_title, rfc_number):
+def lookupRequestHandler(hostname, rfc_title, rfc_number):
     print("lookup")
     response = ""
-    for ele in rfc_list:
-        if ele[0] == rfc_number and ele[2] == rfc_title:
-            response += f"{rfc_number} {rfc_title} {hostname} {port_number}\n"
+    for ele_rfc in rfc_list:
+        if ele_rfc[0] == rfc_number and ele_rfc[2] == rfc_title:
+            for ele_peer in peer_list:
+                if ele_rfc[2] == ele_peer[0]:
+                    response += f"RFC {rfc_number} {rfc_title} {ele_peer[0]} {ele_peer[1]}\n"
     if len(response) == 0:
         # not found
         response = invalidRequestHandler(2)
@@ -64,13 +66,26 @@ def listallRequestHandler(hostname, port_number):
 
 def closeConnectionHandler(hostname, port_number):
     # deleting peer details from the list
-    print("close...")
+    print("close...before")
+    print(rfc_list)
+    print(peer_list)
+    rfc_removal_list = []
+    peer_removal_list = []
     for ele in peer_list:
         if ele[0] == hostname:
-            peer_list.remove(ele)
+            peer_removal_list.append(ele)
+            # peer_list.remove(ele)
     for ele in rfc_list:
-        if ele[0] == hostname:
-            rfc_list.remove(ele)
+        if ele[2] == hostname:
+            rfc_removal_list.append(ele)
+            # rfc_list.remove(ele)
+    for ele in peer_removal_list:
+        peer_list.remove(ele)
+    for ele in rfc_removal_list:
+        rfc_list.remove(ele)
+    print("close....after")
+    print(rfc_list)
+    print(peer_list)
     return "-1"
 
 def invalidRequestHandler(index):
@@ -119,7 +134,7 @@ def peerHandler(peer_socket, peer_address):
             elif request_type == "LOOKUP" and re.match(LOOKUP_SYNTAX, message):
                 rfc_title = message_lines[3].split(":")[1].strip()
                 rfc_number = int(message_lines[0].split("RFC")[1].split()[0])
-                response = lookupRequestHandler(hostname, port_number, rfc_title, rfc_number)
+                response = lookupRequestHandler(hostname, rfc_title, rfc_number)
 
             elif request_type == "LIST" and re.match(LISTALL_SYNTAX, message):
                 response = listallRequestHandler(hostname, port_number)
@@ -134,6 +149,9 @@ def peerHandler(peer_socket, peer_address):
             print("Connection terminating")
             response = "Connection Terminated"
             peer_socket.send(response.encode())
+            print("\n******************\n")
+            print(peer_list)
+            print(rfc_list)
             peer_socket.close()
             break
 
