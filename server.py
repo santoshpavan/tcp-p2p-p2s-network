@@ -115,6 +115,7 @@ serverSocket.listen(BACKLOG_CONNECTIONS)
 while True:
     # establishing connection with the peer
     peer_socket, peer_address = serverSocket.accept()
+    print(f"Connection from {peer_address} established...")
     # create a new thread to handle this connection
     peerThread = threading.Thread(target=peerHandler, args=(peer_socket, peer_address))
 
