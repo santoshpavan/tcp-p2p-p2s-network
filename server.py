@@ -1,11 +1,6 @@
 import socket
 import threading
 import re
-import logging
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-10s) %(message)s',
-                    )
 
 PORT_NUMBER = 7734
 BACKLOG_CONNECTIONS = 5
@@ -25,7 +20,6 @@ peer_list = []
 rfc_list = []
 
 def addRequestHandler(hostname, port_number, rfc_title, rfc_number):
-    print("add")
     peer_list.append([hostname, port_number])
     rfc_list.append([rfc_number, rfc_title, hostname])
     response = f"{VERSION} {STATUS_CODE[0]} {PHRASE[0]}\n"
@@ -33,10 +27,9 @@ def addRequestHandler(hostname, port_number, rfc_title, rfc_number):
     return response
 
 def lookupRequestHandler(hostname, rfc_title, rfc_number):
-    print("lookup")
     response = ""
     for ele_rfc in rfc_list:
-        if ele_rfc[0] == rfc_number and ele_rfc[2] == rfc_title:
+        if ele_rfc[0] == rfc_number and ele_rfc[1] == rfc_title:
             for ele_peer in peer_list:
                 if ele_rfc[2] == ele_peer[0]:
                     response += f"RFC {rfc_number} {rfc_title} {ele_peer[0]} {ele_peer[1]}\n"
@@ -50,8 +43,6 @@ def lookupRequestHandler(hostname, rfc_title, rfc_number):
 
 def listallRequestHandler(hostname, port_number):
     response = ""
-    
-    print("listall")
     for ele_rfc in rfc_list:
         for ele_peer in peer_list:
             if ele_rfc[2] == ele_peer[0]:
@@ -66,53 +57,27 @@ def listallRequestHandler(hostname, port_number):
 
 def closeConnectionHandler(hostname, port_number):
     # deleting peer details from the list
-    print("close...before")
-    print(rfc_list)
-    print(peer_list)
     rfc_removal_list = []
     peer_removal_list = []
     for ele in peer_list:
         if ele[0] == hostname:
             peer_removal_list.append(ele)
-            # peer_list.remove(ele)
     for ele in rfc_list:
         if ele[2] == hostname:
             rfc_removal_list.append(ele)
-            # rfc_list.remove(ele)
     for ele in peer_removal_list:
         peer_list.remove(ele)
     for ele in rfc_removal_list:
         rfc_list.remove(ele)
-    print("close....after")
-    print(rfc_list)
-    print(peer_list)
     return "-1"
 
 def invalidRequestHandler(index):
-    print("invalid...")
     response = f"{VERSION} {STATUS_CODE[index]} {PHRASE[index]}\n"
     return response
 
-# def collectMessage(peer_socket):
-#     print("collecting message...")
-#     full_message = ""
-#     while True:   
-#         buffer = peer_socket.recv(BUFFER_SIZE).decode()
-#         if len(buffer) < 1:
-#             break
-#         print(buffer)
-#         full_message += buffer
-#     print("collection done...")
-#     return full_message
-
 def peerHandler(peer_socket, peer_address):
-    # message = collectMessage(peer_socket)
-    print("\n----\n")
-    logging.debug("thread started")
     while True:
         message = peer_socket.recv(BUFFER_SIZE).decode()
-        
-        print(message+"\n")
         message_lines = message.splitlines()
         
         if len(message_lines) < 2:
@@ -146,19 +111,15 @@ def peerHandler(peer_socket, peer_address):
                 response = invalidRequestHandler(1)
         
         if response == "-1":
-            print("Connection terminating")
-            response = "Connection Terminated"
+            response = "Connection Terminated Successfully!"
             peer_socket.send(response.encode())
-            print("\n******************\n")
             print(peer_list)
             print(rfc_list)
             peer_socket.close()
             break
 
         else:
-            print("sending response")
             peer_socket.send(response.encode())
-    logging.debug("Thead ended")
 
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serverSocket.bind((socket.gethostname(), PORT_NUMBER))
@@ -173,7 +134,5 @@ while True:
     # create a new thread to handle this connection
     peerThread = threading.Thread(target=peerHandler, args=(peer_socket, peer_address,))
     peerThread.start()
-    logging.debug("main thread")
-    print("all done!-----")
 
 serverSocket.close()
