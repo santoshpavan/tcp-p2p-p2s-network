@@ -13,7 +13,6 @@ PHRASE = ["OK", "Bad Request", "Not Found", "P2P-CI Version Not Supported"]
 ADD_SYNTAX = r"ADD\sRFC\s[0-9]+\sP2P-CI\/1.0\nHost:\s?.+\nPort:\s?[0-9]+\nTitle:\s?.+\n?"
 LOOKUP_SYNTAX = r"LOOKUP\sRFC\s[0-9]+\sP2P-CI\/1.0\nHost:\s?.+\nPort:\s?[0-9]+\nTitle:\s?.+\n?"
 LISTALL_SYNTAX = r"LIST ALL\sP2P-CI\/1.0\nHost:\s?.+\nPort:\s?[0-9]+\n?"
-HOSTNAME_SYNTAX = r"^(((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|((([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z|[A-Za-z][A-Za-z0-9\‌​-]*[A-Za-z0-9])))$"
 
 # Lists of connected peers
 peer_list = []
@@ -88,9 +87,7 @@ def peerHandler(peer_socket, peer_address):
         hostname = message_lines[1].split(":")[1].strip()
         port_number = int(message_lines[2].split(":")[1].strip())
 
-        if not re.match(HOSTNAME_SYNTAX, hostname):
-            response = invalidRequestHandler(1)
-        elif request_type == "ADD" and re.match(ADD_SYNTAX, message):
+        if request_type == "ADD" and re.match(ADD_SYNTAX, message):
             rfc_title = message_lines[3].split(":")[1].strip()
             rfc_number = int(message_lines[0].split("RFC")[1].split()[0])
             response = addRequestHandler(hostname, port_number, rfc_title, rfc_number)
